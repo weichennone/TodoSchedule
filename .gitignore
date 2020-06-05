@@ -1,1 +1,7 @@
 *.log
+*.pptx
+*.xml
+*.iml
+*.pyc
+*.DS_Store
+
