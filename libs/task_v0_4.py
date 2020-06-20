@@ -1,6 +1,6 @@
 from datetime import datetime
-import libs.logger as logger
 from datetime import timedelta
+import libs.logger_v0_4 as logger
 
 
 class Task:
@@ -22,9 +22,6 @@ class Task:
 
         self.done = False
         self.running = False
-
-        self.task_stat = []
-        self.last_update = None
 
     def start(self):
         if not self.running:
@@ -101,7 +98,7 @@ class TaskTree:
         self.active_task = None
 
         self.task_stat = []
-        self.last_update = 0
+        self.last_update = None
 
         self.schedule = {}
 
@@ -155,6 +152,7 @@ class TaskTree:
             else:
                 self.finished_list[date] = [(time, taskname)]
             del self.task_dict[id]
+            # print(self.schedule)
             if id in self.schedule:
                 del self.schedule[id]
             task.done = done
@@ -162,14 +160,38 @@ class TaskTree:
                 self.active_task = None
             self.time_manager(start=False)
             return task
+        # if parent_id == -1:
+        #     del self.task_dict[id]
+        #     if date in self.finished_list:
+        #         self.finished_list[date].append((time, task.get_name()))
+        #     else:
+        #         self.finished_list[date] = [(time, task.get_name())]
+        #     task.done = done
+        #     if task == self.active_task:
+        #         self.active_task = None
+        #     self.time_manager(start=False)
+        #     return task
+        # elif parent_id == -2:
+        #     return None
+        # else:
+        #     del self.task_dict[id]
+        #     parent_task = self.get_task(parent_id)
+        #     parent_task.finish_successor(id)
+        #     if date in self.finished_list:
+        #         self.finished_list[date].append((time, parent_task.get_name() + ": " + task.get_name()))
+        #     else:
+        #         self.finished_list[date] = [(time, parent_task.get_name() + ": " + task.get_name())]
+        #     task.done = done
+        #     if task == self.active_task:
+        #         self.active_task = None
+        #     self.time_manager(start=False)
+        #     return task
 
     def reset(self):
         dt = datetime.now()
         date = "{:4d}{:02d}{:02d}".format(dt.year, dt.month, dt.day)
         if date != self.current_date:
-            self.logger.save_log(self.task_dict)
             self.logger.write_history(self.finished_list)
-            self.logger.save_time_stat(self.task_stat)
             self.current_date = date
             self.task_stat = []
             self.last_update = None
@@ -189,19 +211,18 @@ class TaskTree:
 
     def construct_from_log(self):
         self.task_dict = self.logger.read_log()
+        # sth = self.logger.read_time_stat()
+        # print(sth)
         if not self.task_dict: self.task_dict = {}
+
         # re-allocate task id
         for k in self.task_dict:
             self._idset.add(k)
 
-    def terminate(self):
-        if self.active_task:
-            self.active_task.stop()
-        self.logger.save_log(self.task_dict)
-        self.logger.write_history(self.finished_list)
-        self.logger.save_time_stat(self.task_stat)
-
     def time_manager(self, start=True):
+        # what if finish stopped task, and then finish a regular task??
+        # what if a task in running and finish another task? It'll change the last update
+        # It gets stuck, after change a day?
         dt = datetime.now()
         if not self.last_update:
             duration = timedelta(hours=dt.hour, minutes=dt.minute, seconds=dt.second)
@@ -218,6 +239,14 @@ class TaskTree:
                     self.task_stat[-1] = (curr_activity, last_duration + duration.total_seconds())
                 else:
                     self.task_stat.append((curr_activity, duration.total_seconds()))
+        # print(self.last_update, self.task_stat)
+
+    def terminate(self):
+        if self.active_task:
+            self.active_task.stop()
+        self.logger.save_log(self.task_dict)
+        self.logger.write_history(self.finished_list)
+        self.logger.save_time_stat(self.task_stat)
 
     def _assign_id(self):
         while str(self._serial_num) in self._idset:

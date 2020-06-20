@@ -4,4 +4,6 @@
 *.iml
 *.pyc
 *.DS_Store
+*.pkl
+.DS_Store
 

@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from libs import task
+from libs import task_v0_4
 from libs import dialogs
 
 
@@ -9,8 +9,9 @@ class Application(tk.Frame):
         tk.Frame.__init__(self, master)
         self.pack()
 
-        self.tasklist = task.TaskTree()
+        self.tasklist = task_v0_4.TaskTree()
         self.tasktree = None
+        # self.today_schedule = {}
         self.viewid2list = {}
         self.scheduleviewid2list = {}
 
@@ -20,7 +21,6 @@ class Application(tk.Frame):
         self.root = master
         self.root.protocol("WM_DELETE_WINDOW", self.exit)
 
-        # self.color_dict = {'rest': 'dim gray', 'work': 'deep sky blue'}
         self.color_dict = {'rest': 'dim gray',
                            'work': 'deep sky blue',
                            'creative': 'DarkOrchid1',
@@ -33,24 +33,38 @@ class Application(tk.Frame):
         self.createWidgets()
 
     def createWidgets(self):
-
+        """
+        Define the display of the main window
+        :return:
+        """
+        # Control button
         self.button_add = tk.Button(self, text="Add", width=8, command=self.add)
-        # self.button_add_to = tk.Button(self, text="Add to", width=8, command=self.add_to)
         self.button_assign = tk.Button(self, text="Assign", width=8, command=self.assign)
         self.button_start = tk.Button(self, text="Start", width=8, command=self.start)
         self.button_finish = tk.Button(self, text="Finish", width=8, command=self.finish)
         self.button_delete = tk.Button(self, text="Delete", width=8, command=self.delete)
         self.button_stop = tk.Button(self, text="Stop", width=8, command=self.stop)
         self.button_add.grid(row=0, column=0, sticky=tk.W, pady=2)
-        # self.button_add_to.grid(row=0, column=1, sticky=tk.W, pady=2)
         self.button_assign.grid(row=0, column=1, sticky=tk.W, pady=2)
         self.button_start.grid(row=0, column=3, sticky=tk.W, pady=2)
         self.button_stop.grid(row=0, column=4, sticky=tk.W, pady=2)
         self.button_finish.grid(row=0, column=5, sticky=tk.W, pady=2)
         self.button_delete.grid(row=0, column=2, sticky=tk.W, pady=2)
 
+        # self.label_id = tk.Label(self, text="ID:", width=8, justify=tk.RIGHT)
+        # self.label_id.grid(row=1, column=0, sticky=tk.W, pady=2)
+        # self.entry_id = ttk.Entry(self, width=8)
+        # self.entry_id.grid(row=1, column=1, sticky=tk.W, pady=2)
+
+        # self.label_task = tk.Label(self, text="Task:", width=8, justify=tk.RIGHT)
+        # self.label_task.grid(row=1, column=2, sticky=tk.W, pady=2)
+        # self.entry_task = ttk.Entry(self, width=24)
+        # self.entry_task.grid(row=1, column=3, columnspan=3, sticky=tk.W, pady=2)
+
+        # Highlight
         self.active_reminder = tk.Label(self, text="Active:", width=8, justify=tk.LEFT)
         self.active_reminder.grid(row=1, column=0, columnspan=1, sticky=tk.W, pady=2)
+
         self.active_text = tk.StringVar()
         self.active_text.set(self.activestr)
         self.active_display = tk.Label(self, textvariable=self.active_text, justify=tk.LEFT, bg='ivory2')
@@ -65,10 +79,10 @@ class Application(tk.Frame):
         self.tabControl.add(self.tab_schedule, text='Schedule')
 
         # Task pool tab
-        scrollbar = tk.Scrollbar(self)
+        scrollbar = tk.Scrollbar(self.tab_task_pool)
         scrollbar.grid(row=0, column=6, sticky='ns')
 
-        self.task_display = ttk.Treeview(self, columns=('ID', 'Task', 'Created Time'), height=30, yscrollcommand=scrollbar.set)
+        self.task_display = ttk.Treeview(self.tab_task_pool, columns=('ID', 'Task', 'Created Time'), height=30, yscrollcommand=scrollbar.set)
         for col in ('ID', 'Task', 'Created Time'):
             self.task_display.heading(col, text=col)
         self.task_display.grid(row=0, column=0, columnspan=6)
@@ -82,7 +96,7 @@ class Application(tk.Frame):
         scrollbar_schedule.grid(row=0, column=6, sticky='ns')
 
         self.schedule_display = ttk.Treeview(self.tab_schedule, columns=('Task', 'Priority'), height=30,
-                                             yscrollcommand=scrollbar_schedule.set)
+                                         yscrollcommand=scrollbar_schedule.set)
         for col in ('Task', 'Priority'):
             self.schedule_display.heading(col, text=col)
         self.schedule_display.grid(row=0, column=0, columnspan=6)
@@ -90,18 +104,24 @@ class Application(tk.Frame):
         self.schedule_display.column("Task", width=350, anchor='nw')
         self.schedule_display.column("Priority", width=100, anchor='center')
 
+        # Statistics
         self.statistics_header = tk.Label(self, text="Stat:", width=8, justify=tk.LEFT)
-        self.statistics_header.grid(row=4, column=0, columnspan=1, sticky=tk.W, pady=2)
+        self.statistics_header.grid(row=3, column=0, columnspan=1, sticky=tk.W, pady=2)
 
         self.stat_canvas = tk.Canvas(self, width=400, height=20)
         self.stat_canvas.create_rectangle(0, 0, 400, 20, outline="light gray", fill="light gray")
-        self.stat_canvas.grid(row=4, column=1, columnspan=5, sticky=tk.W, pady=2)
+        self.stat_canvas.grid(row=3, column=1, columnspan=5, sticky=tk.W, pady=2)
+
+        # self.frame = tk.Frame(self, width=200, height=30)
+        # self.frame.grid(row=4, column=0)
 
         self.tasklist.construct_from_log()
         self.refresh()
 
     # Add a task
     def add(self):
+        # taskname = self.entry_task.get()
+
         d = dialogs.AddTask(self)
         self.wait_window(d.top)
         # print(d.result)
@@ -113,14 +133,33 @@ class Application(tk.Frame):
                 self.tasklist.add_task(taskname, pid, priority, task_type)
                 self.refresh()
 
-    # Assign a task to today's schedule
+    # Add a task
     def assign(self):
+        # d = dialogs.AssignTask(self)
+        # self.wait_window(d.top)
         item = self.task_display.focus()
         if item:
             id = self.viewid2list[item]
+            # print(id)
+        # if d.result:
+        #     pid = d.result
+
             if id:
+                # print("has item")
                 self.tasklist.schedule[id] = self.tasklist.get_task(id)
+                print(self.tasklist.schedule)
                 self.refresh()
+        # item = self.task_display.focus()
+        # id = self.viewid2list[item]
+        # task = self.tasklist.get_task(id)
+        # print(task.priority, task.task_type, task.name)
+        # id = self.entry_id.get()
+        # taskname = self.entry_task.get()
+        #
+        # # input check
+        # if id and taskname:
+        #     self.tasklist.add_task(taskname, id)
+        #     self.refresh()
 
     # Finish a task
     def finish(self):
@@ -193,18 +232,23 @@ class Application(tk.Frame):
 
         # display all tasks
         self.task_display.delete(*self.task_display.get_children())
+        self.viewid2list = {}
         for k in self.tasktree:
             # if isinstance(self.tasktree[k], list):
             root_task, subtask_dict = self.tasktree[k]
             dt = root_task.create_time
             created_time = "{:02d}/{:02d} {:02d}:{:02d}".format(dt.month, dt.day, dt.hour, dt.minute)
             idx = self.task_display.insert('', 'end', value=(k, root_task.get_name(), created_time), open=True)
+            # print(idx, root_task.get_name())
+            self.viewid2list[idx] = k
 
             # show subtasks
             for k2 in subtask_dict:
                 dt = subtask_dict[k2].create_time
                 created_time = "{:02d}/{:02d} {:02d}:{:02d}".format(dt.month, dt.day, dt.hour, dt.minute)
-                self.task_display.insert(idx, 'end', value=(k2, " |_. " + subtask_dict[k2].get_name(), created_time))
+                idx2 = self.task_display.insert(idx, 'end', value=(k2, " |_. " + subtask_dict[k2].get_name(), created_time))
+                self.viewid2list[idx2] = k2
+        # print(self.viewid2list)
 
         # display schedule
         self.schedule_display.delete(*self.schedule_display.get_children())
@@ -231,15 +275,19 @@ class Application(tk.Frame):
 
         # display daily stats
         start_p = 0
+        # self.tasklist.task_stat = [('rest', 5000), ('creative', 2000), ('labor', 3000), ('exercise', 4000), ('entertain', 5000),
+        #                            ('misc', 6000), ('eating', 2000)]
+        # print("here")
         for stat in self.tasklist.task_stat:
             length = int(stat[1] / 216)
-            self.stat_canvas.create_rectangle(start_p, 0, start_p + length, 20,
-                                              outline=self.color_dict[stat[0]], fill=self.color_dict[stat[0]])
+            self.stat_canvas.create_rectangle(start_p, 0, start_p + length, 20, outline=self.color_dict[stat[0]], fill=self.color_dict[stat[0]])
             start_p += length
         if start_p < 400:
             self.stat_canvas.create_rectangle(start_p, 0, 400, 20, outline="light gray", fill="light gray")
 
     def refresh(self):
+        # self.entry_id.delete(0, 'end')
+        # self.entry_task.delete(0, 'end')
         self.tasktree = self.tasklist.generate_tree_view()
         self.display()
 

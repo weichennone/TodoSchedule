@@ -2,14 +2,14 @@ import pickle
 from os import path
 import json
 from datetime import datetime
+from datetime import timedelta
 
 
 class Logger:
     def __init__(self):
-        self.logpath = "log.log"
-        self.historypath = "history/history.log"
-        # self.timestatpath = "history/history_time_stat.pkl"
-        self.timestatpath = "history/time_stat.log"
+        self.logpath = "log_test/log_test1.log"
+        self.historypath = "log_test/history_test.log"
+        self.timestatpath = "log_test/time_stat.log"
 
     # Append finished tasks to the file
     def write_history(self, finished_list):
@@ -49,9 +49,16 @@ class Logger:
 
     def read_time_stat(self):
         all_time_stat = {}
-        # if path.exists(self.timestatpath):
-        #     print("exists")
-        #     with open(self.timestatpath, 'rb') as f:
+        if path.exists(self.timestatpath):
+            print("exists")
+            with open(self.timestatpath) as f:
+                for line in f:
+                    info = line.strip().split('\t\t')
+                    assert len(info) == 2
+                    all_time_stat[info[0]] = []
+                    for ele in info[1].split(' | '):
+                        task, t = ele.split(':')
+                        all_time_stat[info[0]].append((task, float(t)))
         #         while True:
         #             try:
         #                 time_stat = pickle.load(f)
@@ -61,3 +68,19 @@ class Logger:
         #                 break
                 # tasklist = json.load(f) # old logger version v0.2
         return all_time_stat
+
+    def read_today_time_stat(self):
+        time_stat = []
+        dt = datetime.now()
+        date = "{:4d}{:02d}{:02d}".format(dt.year, dt.month, dt.day)
+        if path.exists(self.timestatpath):
+            print("exists")
+            with open(self.timestatpath) as f:
+                for line in f:
+                    info = line.strip().split('\t\t')
+                    assert len(info) == 2
+                    if date == info[0]:
+                        for ele in info[1].split(' | '):
+                            task, t = ele.split(':')
+                            time_stat.append((task, timedelta(seconds=float(t)).total_seconds()))
+        return time_stat
